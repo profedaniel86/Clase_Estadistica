@@ -1,0 +1,249 @@
+---
+title: "Practica Unidad 1"
+output:
+  html_document: default
+  pdf_document: default
+date: "2025-02-26"
+---
+
+## Universidad Icesi
+
+FACULTAD DE INGENIERIAS, DISEÑO Y CIENCIAS APLICADAS.
+
+DEPARTAMENTO DE CIENCIAS FISICAS Y APLICADAS.
+
+Profesor: Daniel Osorio
+
+## Analisis Exploratorio con R y Python
+
+Las autoridades de salud de la ciudad están preocupadas porque en cierta zona de esta se viene presentado un problema de salud en niños recién nacidos y consideran que el problema se debe a los malos hábitos de vida de las madres. Desarrollan un estudio a todas las madres que durante un periodo de seis meses dieron a luz un bebe en dicha zona. En este estudio se evaluaron aspectos de la historia clínica y sus hábitos de vida. La información de cada una de las madres y su hijo quedó registrada en la siguiente tabla.
+
+Id: número identificador de la madre.
+
+Bajo_peso: indica si él recién nacido tuvo bajo paso al momento de nacer (1=Si; 0=No).
+
+Edad: edad de la madre en años cumplidos.
+
+Peso_madre: peso de la madre en libras.
+
+Raza: raza de la madre.
+
+Fumar: antecedente de consumo de cigarrillo de la madre (1=Si; 0=No).
+
+TPP: antecedente materno del número partos prematuros antes de este embarazo.
+
+Ant_HTA: antecedente materno de hipertensión arterial (1=Si; 0=No).
+
+Irrit_uterina: antecedente en este embarazo de irritabilidad uterina (1=Si; 0=No).
+
+Visitas_md: número de visitas de control médico en este embarazo.
+
+peso_nacer: peso real al nacer en gramos del recién nacido
+
+### Librerias
+
+Instalamos los paquetes de R, requeridos para trabajar el EDA.
+
+Importamos los paquetes instalados
+
+
+```{r librerias, echo=FALSE}
+library(readxl)
+library(dplyr)
+library(ggplot2)
+library(reshape2)
+library(readr)
+```
+
+### Carga de Datos
+
+```{r datos, echo=FALSE}
+datos_r <- read.csv('https://raw.githubusercontent.com/profedaniel86/Clase-Bioestad-stica/refs/heads/main/Practica%20R/Practica.csv', sep=';')
+head(datos_r)
+
+```
+
+### Exploremos los Datos
+
+¿Se trata de una muestra o una población?
+
+```{r bloque2}
+# Hola
+print("Hola")
+
+```
+
+¿cuáles variables son cualitativas y cuales son cuantitativas?
+
+
+```{r tipovardatos}
+str(datos_r)
+
+```
+
+
+Empecemos a analizar frecuencias
+
+#### la distribución de frecuencias para el bajo peso al nacer. ¿Existe realmente el problema?
+
+
+```{r Bajo_peso}
+# Frecuencia de la variable 'Bajo_peso'
+frecuencia_Bajo_peso <- table(datos_r$Bajo_peso)
+print(frecuencia_Bajo_peso)
+frec_relativa_Bajo_peso <- prop.table(table(datos_r$Bajo_peso))
+print(frec_relativa_Bajo_peso)
+
+```
+
+En los datos, observamos que un 69% de los niños nacieron con peso normal, mientras que un 31% con bajo peso, lo que representa un valor alto en el contexto del problema
+
+
+Miremos una tabla completa analizando solo la variable raza
+
+```{r tabla_completa_raza}
+# Crear una tabla con frecuencias absolutas, relativas y acumuladas
+tabla_completa <- datos_r %>%
+  group_by(Raza) %>%
+  summarise(Frecuencia_Absoluta = n()) %>%
+  mutate(
+    Frecuencia_Relativa = Frecuencia_Absoluta / sum(Frecuencia_Absoluta),
+    Frecuencia_Absoluta_Acum = cumsum(Frecuencia_Absoluta),
+    Frecuencia_Relativa_Acum = cumsum(Frecuencia_Relativa)
+  )
+
+# Mostrar la tabla
+print(tabla_completa, width = Inf)
+
+```
+
+
+
+
+```{r graf1}
+# Diagrama de barras para 'Raza'
+ggplot(datos_r, aes(x = Raza)) +
+  geom_bar(fill = "orange") +
+  labs(title = "Distribución de Raza", x = "Raza", y = "Frecuencia")
+```
+
+#### distribución de frecuencias de la raza de la madre con el bajo peso. ¿Existe alguna relación?
+
+```{r nombrebloque}
+
+print("Hola")
+
+```
+
+```{r Raza_Bajo_peso}
+
+# Tabla cruzada entre 'Raza' y 'Bajo_peso'
+tabla_cruzada <- table(datos_r$Raza, datos_r$Bajo_peso)
+print(tabla_cruzada)
+
+# Frecuencia relativa total (porcentaje sobre el total de datos)
+frec_relativa_total <- prop.table(tabla_cruzada) * 100
+print(frec_relativa_total)
+
+# Frecuencia relativa por filas (porcentaje dentro de cada raza)
+frec_relativa_filas <- prop.table(tabla_cruzada, margin = 1) * 100
+print(frec_relativa_filas)
+
+```
+
+
+
+```{r apila1}
+## Convertir tabla cruzada a formato largo para graficar
+df_tabla <- as.data.frame(tabla_cruzada)
+colnames(df_tabla) <- c("Raza", "Bajo_peso", "Frecuencia")
+
+# Gráfico de barras agrupadas (frecuencias absolutas)**
+ggplot(df_tabla, aes(x = Raza, y = Frecuencia, fill = Bajo_peso)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Distribución de Bajo Peso por Raza", x = "Raza", y = "Frecuencia") +
+  theme_minimal()
+
+# Gráfico de barras apiladas (frecuencias relativas por fila)**
+df_frec_rel <- as.data.frame(frec_relativa_filas)
+colnames(df_frec_rel) <- c("Raza", "Bajo_peso", "Porcentaje")
+
+ggplot(df_frec_rel, aes(x = Raza, y = Porcentaje, fill = Bajo_peso)) +
+  geom_bar(stat = "identity", position = "fill") +
+  scale_y_continuous(labels = scales::percent_format(scale = 1)) +
+  labs(title = "Distribución Relativa de Bajo Peso por Raza", x = "Raza", y = "Porcentaje") +
+  theme_minimal()
+
+```
+
+#### Estadísticas descriptivas del peso al nacer por cada raza de la madre. Compare los resultados.
+
+```{r estadisticaspeso}
+# Media, mediana y desviación estándar de 'peso_nacer'
+media_peso <- mean(datos_r$peso_nacer, na.rm = TRUE)
+mediana_peso <- median(datos_r$peso_nacer, na.rm = TRUE)
+desviacion_peso <- sd(datos_r$peso_nacer, na.rm = TRUE)
+
+print(paste("Media:", media_peso))
+print(paste("Mediana:", mediana_peso))
+print(paste("Desviación estándar:", desviacion_peso))
+
+```
+
+
+```{r hist1}
+# Histograma de 'peso_nacer'
+library(ggplot2)
+
+# Crear el histograma con la curva de densidad
+ggplot(datos_r, aes(x = peso_nacer)) +
+  geom_histogram(aes(y = ..density..), binwidth = 200, fill = "blue", color = "black", alpha = 0.7) +
+  geom_density(color = "red", size = 1) +
+  labs(title = "Histograma de Peso al Nacer con Curva de Densidad",
+       x = "Peso al Nacer (gramos)",
+       y = "Densidad")
+```
+
+
+Agrupar por 'Raza' y calcular estadísticas
+
+```{r raza1}
+agrupado_raza <- datos_r %>%
+  group_by(Raza) %>%
+  summarise(
+    peso_min = min(peso_nacer, na.rm = TRUE),   # min
+    peso_promedio = mean(peso_nacer, na.rm = TRUE),   # Media
+    mediana = median(peso_nacer, na.rm = TRUE),       # Mediana
+    peso_max = max(peso_nacer, na.rm = TRUE),   # max
+    rango = max(peso_nacer, na.rm = TRUE) - min(peso_nacer, na.rm = TRUE),  # Rango
+    desviacion_estandar = sd(peso_nacer, na.rm = TRUE),  # Desviación estándar muestral
+    desviacion_estandar_p = sqrt(mean((peso_nacer - mean(peso_nacer))^2, na.rm = TRUE)),
+    coeficiente_variacion = (sd(peso_nacer, na.rm = TRUE) / mean(peso_nacer, na.rm = TRUE)) * 100  # CV%
+  )
+
+# Mostrar resultados
+print(agrupado_raza, width = Inf)
+
+```
+
+
+
+```{r box_plot}
+
+# Boxplot de 'peso_nacer' por 'Raza'
+ggplot(datos_r, aes(x = Raza, y = peso_nacer)) +
+  geom_boxplot(fill = "lightgreen") +
+  labs(title = "Boxplot de Peso al Nacer por Raza", x = "Raza", y = "Peso al Nacer (gramos)")
+```
+
+
+
+
+- Construya la distribución de frecuencias de hábito de fumar por cada bajo peso. ¿Es un indicador del problema?
+- Construya la distribución de frecuencias de Hipertensión por cada bajo peso. ¿Es un indicador del problema?
+- Calcular las estadísticas descriptivas del número de visitas al médico por cada bajo peso. Compare los resultados.
+- Calcular las estadísticas descriptivas del peso de la madre por cada bajo peso. Compare los resultados.
+- Construya un gráfico de caja y bigotes para el peso de la madre por cada bajo peso.
+- Calcular las estadísticas descriptivas del peso al nacer por hábito de fumar de la madre. Compare los resultados.
+- Desarrolle una conclusión general del estudio con base en los resultados obtenidos.
+
